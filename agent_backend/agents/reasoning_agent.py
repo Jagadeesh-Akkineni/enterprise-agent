@@ -5,6 +5,7 @@ from langchain_cohere import ChatCohere
 from langchain_core.messages import HumanMessage
 
 from agents.state import AgentState
+from config import REASONING_MAX_TOKENS, REASONING_MODEL
 
 load_dotenv()
 
@@ -30,9 +31,9 @@ def _get_llm():
     global _llm
     if _llm is None:
         _llm = ChatCohere(
-            model="command-a-reasoning-08-2025",
+            model=REASONING_MODEL,
             cohere_api_key=os.getenv("COHERE_API_KEY"),
-            max_tokens=1024,
+            max_tokens=REASONING_MAX_TOKENS,
         )
     return _llm
 
@@ -44,7 +45,7 @@ def _extract_text(content) -> str:
         return " ".join(
             block.get("text", "") if isinstance(block, dict) else str(block)
             for block in content
-            if not (isinstance(block, dict) and block.get("type") == "thinking")
+            if isinstance(block, dict) and block.get("type") == "text"
         ).strip()
     return str(content).strip()
 

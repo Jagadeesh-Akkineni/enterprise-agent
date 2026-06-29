@@ -7,3 +7,4 @@ langchain-core
 langchain-cohere
 chromadb
 sentence-transformers
+pdfplumber

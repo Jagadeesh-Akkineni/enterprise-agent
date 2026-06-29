@@ -1,15 +1,14 @@
-from pathlib import Path
-
 import chromadb
 from sentence_transformers import SentenceTransformer
 
 from agents.state import AgentState
-
-CHROMA_PATH = Path(__file__).parent.parent / "data_ingestion" / "chroma_db"
-COLLECTION_NAME = "enterprise_docs"
-MODEL_NAME = "all-MiniLM-L6-v2"
-TOP_K = 5
-POOR_RESULT_THRESHOLD = 0.5  # cosine distance; lower = better match
+from config import (
+    CHROMA_COLLECTION,
+    CHROMA_PATH,
+    EMBEDDING_MODEL,
+    RETRIEVAL_POOR_THRESHOLD,
+    RETRIEVAL_TOP_K,
+)
 
 _model = None
 _collection = None
@@ -18,10 +17,10 @@ _collection = None
 def _get_resources():
     global _model, _collection
     if _model is None:
-        _model = SentenceTransformer(MODEL_NAME)
+        _model = SentenceTransformer(EMBEDDING_MODEL)
     if _collection is None:
         client = chromadb.PersistentClient(path=str(CHROMA_PATH))
-        _collection = client.get_collection(COLLECTION_NAME)
+        _collection = client.get_collection(CHROMA_COLLECTION)
     return _model, _collection
 
 
@@ -33,7 +32,7 @@ def retrieval_node(state: AgentState) -> AgentState:
 
     results = collection.query(
         query_embeddings=[embedding],
-        n_results=TOP_K,
+        n_results=RETRIEVAL_TOP_K,
         include=["documents", "metadatas", "distances"],
     )
 
@@ -57,7 +56,7 @@ def check_retrieval_quality(state: AgentState) -> str:
         return "reformulate"
 
     best_score = min(scores)  # cosine distance — lower is better
-    if best_score > POOR_RESULT_THRESHOLD and retry_count < 1:
+    if best_score > RETRIEVAL_POOR_THRESHOLD and retry_count < 1:
         return "reformulate"
 
     return "reasoning"
